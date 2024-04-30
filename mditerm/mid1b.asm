@@ -1,0 +1,67 @@
+List p=18f4520
+    #include<p18f4520.inc>
+        CONFIG OSC = INTIO67
+        CONFIG WDT = OFF
+        org 0x00
+	;initial
+	MOVLW 0x01
+	MOVWF 0x000 ;0x000 = 1
+	MOVLW 0x09 ;n
+	MOVWF 0x010 ;0x010 = n
+	LFSR 0, 0x009 ;FSR0 point to 0x00n
+	LFSR 1, 0x008 ;FSR1 point to 0x00n-1
+	LFSR 2, 0x007 ;FSR2 point to 0x00n-2
+	
+	;set F1 F2
+	MOVFF 0x000,0x001 ;F1
+	DCFSNZ 0x010 ;n--
+	GOTO finish
+	MOVFF 0x000,0x002 ;F2
+	DCFSNZ 0x010 ;n--
+	GOTO finish
+	
+	;subroutine
+	Fib:
+	TSTFSZ INDF0 ;fn = 0
+	RETURN
+	TSTFSZ INDF1 ;fn-1 != 0
+	GOTO check_fsr2
+	GOTO dec1
+	dec1:
+        MOVF POSTDEC0
+	MOVF POSTDEC1
+	MOVF POSTDEC2
+	rcall Fib
+	MOVF POSTINC0
+	MOVF POSTINC1
+	MOVF POSTINC2
+	GOTO Fib
+	check_fsr2:
+	TSTFSZ INDF2 ;fn-2 != 0
+	GOTO add
+	GOTO dec2
+	dec2:
+        MOVF POSTDEC0
+	MOVF POSTDEC1
+	MOVF POSTDEC2
+	MOVF POSTDEC0
+	MOVF POSTDEC1
+	MOVF POSTDEC2
+	rcall Fib
+	MOVF POSTINC0
+	MOVF POSTINC1
+	MOVF POSTINC2
+	MOVF POSTINC0
+	MOVF POSTINC1
+	MOVF POSTINC2
+	GOTO Fib
+	add:
+	MOVF INDF1,w ;wreg = fn-1
+	ADDWF INDF2,w ;wreg = fn-1 + fn-2
+	MOVWF INDF0 ;sfr0 = fn
+	RETURN
+	
+	finish:
+	NOP
+	
+	end
